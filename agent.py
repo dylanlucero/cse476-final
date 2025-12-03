@@ -6,6 +6,8 @@ import os, json, textwrap, re, time
 import requests
 from collections import Counter
 
+from sympy import resultant
+
 API_KEY  = "cse476"
 API_BASE = "http://10.4.58.53:41701/v1"
 MODEL    = "bens_model"
@@ -69,12 +71,24 @@ Move these into a loop instead of separate functions
 
 """
 
-system = "You are a helpful multi use agent. Do not explain the reasoning behind the answer, do not include anything but the final answer."
-
 def chain_of_thought(question):
-    prompt = f"Give only the exact answer, do not include anything but the answer: {question}"
+    system = f"""
+    You are a reasoning assistant. 
+    Think step by step but do not explain the reasoning.
+    Give only the final answer, do not include any explanations.
+    """
+    
+    prompt = f"""
+    Question: {question}
+    """
+
     result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.1)
+    ########
+    #This is spewing a None Type Error when called from agent loop
     result = result["text"]
+    #######
+    
+    print(type(result))
     
     # Removing $, pretty sure this is just a math delimitter
     if result.startswith("$") and result.endswith("$"):
@@ -82,7 +96,8 @@ def chain_of_thought(question):
 
     return result
 
-#print(chain_of_thought((dev_data[0])['input']))
+#print(dev_data[2])
+#print(chain_of_thought((dev_data[2])['input']))
 
 def self_consistency(question, steps=7):
     result_list = []
@@ -94,7 +109,64 @@ def self_consistency(question, steps=7):
     counter = Counter(clean_result_list)
     return counter.most_common(1)[0][0]
 
-#print(self_consistency((dev_data[0])['input']))
+def verify(question, answer):
+    system = f"""
+    You are a deterministic verifier.
+    Answer with only "Yes" or "No". Do not give explanations.
+    """
+
+    prompt = f"""
+    Question: {question}
+    Answer: {answer}
+    
+    Is this answer completely correct?
+    """
+
+    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0)
+    text = result["text"].strip()
+    if text.startswith("Yes"):
+        return "Yes"
+    else:
+        return "No"
+
+def decomp(question):
+    system = """
+    Break the problem into smaller steps and solve step by step.
+    Do not give the reasoning explanation.
+    Answer with only the final answer.
+    """
+    
+    prompt = f"""
+    Question: {question}
+    """
+    result = call_model_chat_completions(question, system=system, model=MODEL, temperature=0.1)
+    return result["text"].strip()
+
+# Function is failing at self consistency
+def agent(question):
+    sc_ans = self_consistency(question, 5)
+    expected_ans = (dev_data[2])["output"]
+    print("Pass self consistency")
+
+    correct = verify(sc_ans, expected_ans)
+
+    if correct == "Yes":
+        return sc_ans
+
+    print("answer was incorrect")  
+    decomp_ans = decomp(question)
+
+    correct = verify(decomp_ans, expected_ans)
+
+    if correct == "Yes":
+        return decomp_ans
+
+    return chain_of_thought(question)
+    
+
+
+# SC is now broken, AttributeError: 'NoneType' object has no attribute 'strip'
+print(agent((dev_data[2])['input']))
 
 # %%
 
