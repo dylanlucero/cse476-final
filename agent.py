@@ -57,7 +57,7 @@ def call_model_chat_completions(prompt: str,
 
 
 # Dev Data for Testing
-with open("cse476_final_project_dev_data.json", "r") as f:
+with open("cse476-final/cse476_final_project_dev_data.json", "r") as f:
     dev_data = json.load(f)
 
 """
@@ -73,100 +73,95 @@ Move these into a loop instead of separate functions
 
 def chain_of_thought(question):
     system = f"""
-    You are a reasoning assistant. 
-    Think step by step but do not explain the reasoning.
-    Give only the final answer, do not include any explanations.
+    You are an assistant that is only allowed to output the final answer and nothing else.
+    Never provide reasoning.
+    Never provide chain of thought.
+    If the answer is a number, provide ONLY the answer number.
+    If the answer is a word, provide ONLY the asnwer word.
+    Do not say "The answer is" or anything of the like.
+    If the problem is a math problem, ONLY give the final answer.
+    If the problem is a chinese math problem, ONLY give the final answer and nothing else.
     """
-    
     prompt = f"""
+    Give ONLY the final answer.
+    Never provide reasoning.
+    If the answer is anumber, give only the number.
     Question: {question}
     """
 
-    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.1)
-    ########
-    #This is spewing a None Type Error when called from agent loop
+    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.2)
     result = result["text"]
-    #######
     
-    print(type(result))
+    #print(result)
     
-    # Removing $, pretty sure this is just a math delimitter
+    # Removing $ from math outputs
     if result.startswith("$") and result.endswith("$"):
         result = result[1:-1].strip()
 
     return result
 
 #print(dev_data[2])
-#print(chain_of_thought((dev_data[2])['input']))
+#test_question = "汤米正在通过卖布朗尼蛋糕（每块 3 美元）和芝士蛋糕（每块 4 美元）为自己的慈善组织筹款。如果汤米卖出了 43 块布朗尼蛋糕和 23 块芝士蛋糕，他筹到了多少钱？"
+#print(chain_of_thought(test_question))
 
 def self_consistency(question, steps=7):
     result_list = []
 
     for _ in range(steps):
-        result_list.append(chain_of_thought(question).strip())
+        result_list.append(chain_of_thought(f"Do not provide any reasoning. Question: {question}"))
 
     clean_result_list = [c.strip() for c in result_list]
     counter = Counter(clean_result_list)
     return counter.most_common(1)[0][0]
 
-def verify(question, answer):
+def verify(question):
     system = f"""
-    You are a deterministic verifier.
-    Answer with only "Yes" or "No". Do not give explanations.
+    You are a concise verifier.
+    Provide only the final answer.
+    Do not show reasoning or chain of thought.
     """
 
     prompt = f"""
     Question: {question}
-    Answer: {answer}
-    
-    Is this answer completely correct?
+    Answer:
     """
 
-    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0)
+    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.0)
     text = result["text"].strip()
-    if text.startswith("Yes"):
-        return "Yes"
-    else:
-        return "No"
+    return text
+
 
 def decomp(question):
     system = """
-    Break the problem into smaller steps and solve step by step.
-    Do not give the reasoning explanation.
-    Answer with only the final answer.
+    Break the problem into smaller steps and solve step by step but never provide the steps.
+    Never give explanations.
+    Answer with only the final answer and nothing else.
     """
     
     prompt = f"""
     Question: {question}
     """
-    result = call_model_chat_completions(question, system=system, model=MODEL, temperature=0.1)
+    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.1)
     return result["text"].strip()
 
-# Function is failing at self consistency
 def agent(question):
-    sc_ans = self_consistency(question, 5)
-    expected_ans = (dev_data[2])["output"]
-    print("Pass self consistency")
-
-    correct = verify(sc_ans, expected_ans)
-
-    if correct == "Yes":
-        return sc_ans
-
-    print("answer was incorrect")  
+    cot_ans = chain_of_thought(question)
+    sc_ans = self_consistency(question, steps=2)
     decomp_ans = decomp(question)
 
-    correct = verify(decomp_ans, expected_ans)
+    answers = [cot_ans, sc_ans, decomp_ans]
 
-    if correct == "Yes":
-        return decomp_ans
+    #print(answers)
 
-    return chain_of_thought(question)
+    if answers[0] == answers[1] == answers[2]:
+        return answers[0]
     
-
-
-# SC is now broken, AttributeError: 'NoneType' object has no attribute 'strip'
-print(agent((dev_data[2])['input']))
+    if answers[1] == answers[0] or answers[1] == answers[2]:
+        return answers[1]
+    
+    return answers[0]
+    
+#print(agent(test_question))
 
 # %%
 
