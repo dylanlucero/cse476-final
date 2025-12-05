@@ -101,7 +101,7 @@ def chain_of_thought(question):
     return result
 
 #print(dev_data[2])
-#test_question = "汤米正在通过卖布朗尼蛋糕（每块 3 美元）和芝士蛋糕（每块 4 美元）为自己的慈善组织筹款。如果汤米卖出了 43 块布朗尼蛋糕和 23 块芝士蛋糕，他筹到了多少钱？"
+#test_question = "I have to plan logistics to transport packages within cities via trucks and between cities via airplanes. Locations within a city are directly connected (trucks can move between any two such locations), and so are the cities. In each city there is exactly one truck and each city has one location that serves as an airport.\nHere are the actions that can be performed:\n\nLoad a package into a truck. For example, load package_1 into truck_1 at location_1_1.\nLoad a package into an airplane. For example, load package_1 into airplane_1 at location_1_1.\nUnload a package from a truck. For example, unload package_1 from truck_1 at location_1_1.\nUnload a package from an airplane. For example, unload package_1 from airplane_1 at location_1_1.\nDrive a truck from one location to another location. For example, drive truck_1 from location_1_1 to location_1_2 in city_1.\nFly an airplane from one city to another city. For example, fly airplane_1 from location_1_1 to location_2_1. Here location_1_1 is the airport in city_1 and location_2_1 is the airport in city_2.\n\nThe following are the restrictions on the actions:\nA package can be loaded into a truck only if the package and the truck are in the same location.\nOnce a package is loaded into a truck, the package is not at the location and is in the truck.   \nA package can be loaded into an airplane only if the package and the airplane are in the same location.\nOnce a package is loaded into an airplane, the package is not at the location and is in the airplane.\nA package can be unloaded from a truck only if the package is in the truck.\nOnce a package is unloaded from a truck, the package is not in the truck and is at the location of the truck.\nA package can be unloaded from an airplane only if the package in the airplane.\nOnce a package is unloaded from an airplane, the package is not in the airplane and is at the location of the airplane.   \nA truck can be driven from one location to another if the truck is at the from-location and both from-location and to-location are locations in the same city.\nOnce a truck is driven from one location to another, it is not at the from-location and is at the to-location.\nAn airplane can be flown from one city to another if the from-location and the to-location are airports and the airplane is at the from-location.\nOnce an airplane is flown from one city to another the airplane is not at the from-location and is at the to-location.\n\n[STATEMENT]\nAs initial conditions I have that, location_0_0 is an airport, location_1_0 is an airport, location_2_0 is an airport, airplane_0 is at location_1_0, airplane_1 is at location_2_0, package_0 is at location_1_0, package_1 is at location_1_0, package_2 is at location_1_2, package_3 is at location_2_0, package_4 is at location_1_1, truck_0 is at location_0_0, truck_1 is at location_1_1, truck_2 is at location_2_1, location_0_0 is in the city city_0, location_0_1 is in the city city_0, location_0_2 is in the city city_0, location_1_0 is in the city city_1, location_1_1 is in the city city_1, location_1_2 is in the city city_1, location_2_0 is in the city city_2, location_2_1 is in the city city_2 and location_2_2 is in the city city_2.\nMy goal is to have that package_0 is at location_2_0, package_1 is at location_0_1, package_2 is at location_1_1, package_3 is at location_1_0 and package_4 is at location_0_1.\n\nMy plan is as follows:\n\n[PLAN]\nload package_4 into truck_1 at location_1_1\nload package_3 into airplane_1 at location_2_0\nload package_1 into airplane_0 at location_1_0\ndrive truck_1 from location_1_1 to location_1_0 in city_1\nunload package_4 from truck_1 at location_1_0\ndrive truck_1 from location_1_0 to location_1_2 in city_1\nload package_2 into truck_1 at location_1_2\ndrive truck_1 from location_1_2 to location_1_1 in city_1\nunload package_2 from truck_1 at location_1_1\nload package_4 into airplane_0 at location_1_0\nfly airplane_0 from location_1_0 to location_0_0\nunload package_4 from airplane_0 at location_0_0\nload package_4 into truck_0 at location_0_0\nunload package_1 from airplane_0 at location_0_0\nload package_1 into truck_0 at location_0_0\ndrive truck_0 from location_0_0 to location_0_1 in city_0\nunload package_4 from truck_0 at location_0_1\nunload package_1 from truck_0 at location_0_1\nfly airplane_1 from location_2_0 to location_1_0\nunload package_3 from airplane_1 at location_1_0\nload package_0 into airplane_1 at location_1_0\nfly airplane_1 from location_1_0 to location_2_0\nunload package_0 from airplane_1 at location_2_0\n[PLAN END]\n\n[STATEMENT]\nAs initial conditions I have that, location_0_0 is an airport, location_1_0 is an airport, location_2_0 is an airport, airplane_0 is at location_0_0, airplane_1 is at location_1_0, package_0 is at location_2_0, package_1 is at location_2_2, package_2 is at location_1_0, package_3 is at location_1_1, package_4 is at location_1_2, truck_0 is at location_0_1, truck_1 is at location_1_1, truck_2 is at location_2_1, location_0_0 is in the city city_0, location_0_1 is in the city city_0, location_0_2 is in the city city_0, location_1_0 is in the city city_1, location_1_1 is in the city city_1, location_1_2 is in the city city_1, location_2_0 is in the city city_2, location_2_1 is in the city city_2 and location_2_2 is in the city city_2.\nMy goal is to have that package_0 is at location_1_1, package_1 is at location_1_0, package_2 is at location_1_0, package_3 is at location_1_2 and package_4 is at location_0_1.\n\nMy plan is as follows:\n\n[PLAN]"
 #print(chain_of_thought(test_question))
 
 def self_consistency(question, steps=7):
@@ -112,23 +112,8 @@ def self_consistency(question, steps=7):
 
     clean_result_list = [c.strip() for c in result_list]
     counter = Counter(clean_result_list)
-    return counter.most_common(1)[0][0]
-
-def verify(question):
-    system = f"""
-    You are a concise verifier.
-    Provide only the final answer.
-    Do not show reasoning or chain of thought.
-    """
-
-    prompt = f"""
-    Question: {question}
-    Answer:
-    """
-
-    result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.0)
-    text = result["text"].strip()
-    return text
+    most_common = counter.most_common(1)[0][0]
+    return most_common
 
 
 def decomp(question):
@@ -142,7 +127,8 @@ def decomp(question):
     Question: {question}
     """
     result = call_model_chat_completions(prompt, system=system, model=MODEL, temperature=0.1)
-    return result["text"].strip()
+    result = result["text"].strip()
+    return result
 
 def agent(question):
     cot_ans = chain_of_thought(question)
