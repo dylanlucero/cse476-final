@@ -1,4 +1,7 @@
 # CSE 476 Agent
+To use the agent, simply pass in a question to the agent() function
+    print(agent(question)) for example
+
     def agent(question):
         cot_ans = chain_of_thought(question)
         sc_ans = self_consistency(question, steps=2)
